@@ -54,7 +54,7 @@ func parseSelection(s *goquery.Selection) (*Topic, error) {
 	}
 
 	votes := s.Find(".votes").Text()
-	plainText(&votes)
+	removeSpace(&votes)
 	t.Votes, _ = strconv.Atoi(votes)
 
 	count := s.Find(".count_livid").Text()
@@ -65,7 +65,18 @@ func parseSelection(s *goquery.Selection) (*Topic, error) {
 	t.NodeUrl, _ = s.Find(".node").Attr("href")
 	completeURL(&t.NodeUrl)
 
-	// TODO: Publish
+	infoText := s.Find(".topic_info").Text()
+	removeSpace(&infoText)
+	infoSlice := strings.Split(infoText, "•")
+
+	if len(infoSlice) > 2 {
+		t.Publish = infoSlice[2]
+		t.PublishTime, _ = publishToTime(t.Publish)
+	}
+
+	if len(infoSlice) > 3 {
+		t.Reply = strings.TrimLeft(infoSlice[3], "最后回复来自")
+	}
 
 	return t, nil
 }
@@ -76,7 +87,7 @@ func completeURL(s *string) {
 	}
 }
 
-func plainText(s *string) {
+func removeSpace(s *string) {
 	v := *s
 	v = strings.Map(func(r rune) rune {
 		if unicode.IsSpace(r) {
@@ -86,6 +97,11 @@ func plainText(s *string) {
 	}, v)
 	v = strings.ReplaceAll(v, " ", "")
 	*s = v
+}
+
+// TODO:
+func publishToTime(publish string) (t time.Time, err error) {
+	return
 }
 
 func onError(err error) {
