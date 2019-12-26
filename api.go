@@ -20,6 +20,8 @@ var (
 	ErrNotLogin = errors.New("Not login")
 )
 
+var DefaultClient *Client
+
 type Topic struct {
 	Title       string
 	Link        string
@@ -55,6 +57,10 @@ type Statistics struct {
 // 财富排行榜 https://www.v2ex.com/top/rich
 // 消费排行榜 https://www.v2ex.com/top/player
 type Leaderboard struct {
+}
+
+func init() {
+	DefaultClient = &Client{}
 }
 
 func parseSelection(s *goquery.Selection) (*Topic, error) {
