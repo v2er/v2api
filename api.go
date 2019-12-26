@@ -35,6 +35,28 @@ type Topic struct {
 	PublishTime time.Time
 }
 
+// Node 节点
+// https://www.v2ex.com/planes
+type Node struct {
+	Name   string
+	URL    string
+	Type   string
+	TypeCN string
+}
+
+// Statistics 社区运行状况
+type Statistics struct {
+	Members  int
+	Topics   int
+	Comments int
+}
+
+// Leaderboard 排行榜
+// 财富排行榜 https://www.v2ex.com/top/rich
+// 消费排行榜 https://www.v2ex.com/top/player
+type Leaderboard struct {
+}
+
 func parseSelection(s *goquery.Selection) (*Topic, error) {
 	t := &Topic{}
 

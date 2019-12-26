@@ -2,6 +2,7 @@ package v2api
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/PuerkitoBio/goquery"
 )
@@ -16,6 +17,10 @@ func NewClient() *Client {
 
 func (c *Client) SetCookie(cookie string) {
 	c.cookie = cookie
+}
+
+func (c *Client) HasLoggedIn() bool {
+	return len(c.cookie) > 0
 }
 
 // Latest 首页最新
@@ -34,6 +39,75 @@ func (c *Client) Latest() (topics []*Topic, err error) {
 		topic, err := parseSelection(s)
 		onError(err)
 		topics = append(topics, topic)
+	})
+
+	return
+}
+
+// Hots 今日热议主题
+func (c *Client) Hots() (topics []*Topic, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = r.(error)
+		}
+	}()
+
+	doc, err := c.queryDocument(URL_HOME)
+	onError(err)
+
+	topics = make([]*Topic, 0)
+	doc.Find("#TopicsHot table").Each(func(i int, s *goquery.Selection) {
+		t := &Topic{}
+
+		// TODO: Author
+
+		a := s.Find(".item_hot_topic_title a")
+		t.Title = a.Text()
+		t.Link, _ = a.Attr("href")
+		completeURL(&t.Link)
+
+		topics = append(topics, t)
+	})
+
+	return
+}
+
+// Planes 位面列表
+func (c *Client) Planes() (nodes []*Node, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = r.(error)
+		}
+	}()
+
+	doc, err := c.queryDocument(URL_PLANES)
+	onError(err)
+
+	nodes = make([]*Node, 0)
+	doc.Find("#Main .box").Each(func(i int, s *goquery.Selection) {
+		if i == 0 {
+			return
+		}
+
+		str := s.Find(".header").Text()
+		removeSpace(&str)
+		str = strings.Split(str, "•")[0]
+
+		fr := s.Find(".fr").Text()
+		removeSpace(&fr)
+		fr = strings.Split(fr, "•")[0]
+
+		cn := strings.TrimRight(str, fr)
+
+		s.Find(".inner a").Each(func(_ int, a *goquery.Selection) {
+			node := &Node{}
+			node.Name = a.Text()
+			node.URL, _ = a.Attr("href")
+			completeURL(&node.URL)
+			node.Type = fr
+			node.TypeCN = cn
+			nodes = append(nodes, node)
+		})
 	})
 
 	return
