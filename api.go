@@ -14,6 +14,7 @@ const (
 	URL_HOME   = "https://www.v2ex.com"
 	URL_RECENT = URL_HOME + "/recent"
 	URL_PLANES = URL_HOME + "/planes"
+	URL_MEMBER = URL_HOME + "/member/"
 )
 
 var (
@@ -44,6 +45,15 @@ type Node struct {
 	URL    string
 	Type   string
 	TypeCN string
+}
+
+// Member 会员数据
+// https://www.v2ex.com/member/livid
+type Member struct {
+	Number   int
+	Join     string
+	JoinTime time.Time
+	Rank     int
 }
 
 // Community 社区数据

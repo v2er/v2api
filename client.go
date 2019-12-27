@@ -5,6 +5,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/PuerkitoBio/goquery"
 )
@@ -70,6 +71,33 @@ func (c *Client) Hots() (topics []*Topic, err error) {
 
 		topics = append(topics, t)
 	})
+
+	return
+}
+
+// Member 会员数据
+func (c *Client) Member(name string) (mem *Member, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = r.(error)
+		}
+	}()
+
+	doc, err := c.queryDocument(URL_MEMBER + name)
+	onError(err)
+
+	str := doc.Find("#Main .box").Eq(0).Find(".gray").Text()
+	removeSpace(&str)
+
+	reg := regexp.MustCompile(`V2EX第(\d+)号会员，加入于(.+)今日活跃度排名(\d+)`)
+	res := reg.FindStringSubmatch(str)
+	number, join, rank := res[1], res[2], res[3]
+
+	mem = &Member{}
+	mem.Number, _ = strconv.Atoi(number)
+	mem.Join = join
+	mem.JoinTime, _ = time.Parse("2006-01-0215:04:05+08:00", join)
+	mem.Rank, _ = strconv.Atoi(rank)
 
 	return
 }
