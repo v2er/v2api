@@ -50,10 +50,14 @@ type Node struct {
 // Member 会员数据
 // https://www.v2ex.com/member/livid
 type Member struct {
+	Name     string
+	Bio      string
+	Avatar   string
 	Number   int
 	Join     string
 	JoinTime time.Time
 	Rank     int
+	Online   bool
 }
 
 // Community 社区数据
@@ -126,7 +130,9 @@ func parseSelection(s *goquery.Selection) (*Topic, error) {
 }
 
 func completeURL(s *string) {
-	if len(*s) > 0 {
+	if strings.HasPrefix(*s, "//") {
+		*s = "https:" + *s
+	} else if strings.HasPrefix(*s, "/") {
 		*s = URL_HOME + *s
 	}
 }

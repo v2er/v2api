@@ -62,12 +62,16 @@ func (c *Client) Hots() (topics []*Topic, err error) {
 	doc.Find("#TopicsHot table").Each(func(i int, s *goquery.Selection) {
 		t := &Topic{}
 
-		// TODO: Author
-
 		a := s.Find(".item_hot_topic_title a")
 		t.Title = a.Text()
 		t.Link, _ = a.Attr("href")
 		completeURL(&t.Link)
+
+		t.AuthorUrl, _ = s.Find("a").Eq(0).Attr("href")
+		t.Author = strings.TrimLeft(t.AuthorUrl, "/member/")
+		completeURL(&t.AuthorUrl)
+		t.Avatar, _ = s.Find(".avatar").Attr("src")
+		completeURL(&t.Avatar)
 
 		topics = append(topics, t)
 	})
@@ -86,7 +90,9 @@ func (c *Client) Member(name string) (mem *Member, err error) {
 	doc, err := c.queryDocument(URL_MEMBER + name)
 	onError(err)
 
-	str := doc.Find("#Main .box").Eq(0).Find(".gray").Text()
+	slt := doc.Find("#Main .box").Eq(0)
+
+	str := slt.Find(".gray").Text()
 	removeSpace(&str)
 
 	reg := regexp.MustCompile(`V2EX第(\d+)号会员，加入于(.+)今日活跃度排名(\d+)`)
@@ -94,10 +100,15 @@ func (c *Client) Member(name string) (mem *Member, err error) {
 	number, join, rank := res[1], res[2], res[3]
 
 	mem = &Member{}
+	mem.Name = name
+	mem.Bio = slt.Find(".bigger").Text()
+	mem.Avatar, _ = slt.Find(".avatar").Attr("src")
+	completeURL(&mem.Avatar)
 	mem.Number, _ = strconv.Atoi(number)
 	mem.Join = join
 	mem.JoinTime, _ = time.Parse("2006-01-0215:04:05+08:00", join)
 	mem.Rank, _ = strconv.Atoi(rank)
+	mem.Online = slt.Find(".online").Length() > 0
 
 	return
 }
