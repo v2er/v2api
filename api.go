@@ -46,11 +46,17 @@ type Node struct {
 	TypeCN string
 }
 
-// Statistics 社区运行状况
-type Statistics struct {
-	Members  int
-	Topics   int
-	Comments int
+// Community 社区数据
+type Community struct {
+	// 首页右侧
+	Members  int // 会员
+	Topics   int // 主题
+	Comments int // 回复
+
+	// 首页底部
+	Version   string // 版本
+	Online    int    // 当前在线
+	OnlineMax int    // 最高在线
 }
 
 // Leaderboard 排行榜

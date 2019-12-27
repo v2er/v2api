@@ -2,6 +2,8 @@ package v2api
 
 import (
 	"net/http"
+	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
@@ -68,6 +70,37 @@ func (c *Client) Hots() (topics []*Topic, err error) {
 
 		topics = append(topics, t)
 	})
+
+	return
+}
+
+// Community 社区数据
+func (c *Client) Community() (com *Community, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = r.(error)
+		}
+	}()
+
+	doc, err := c.queryDocument(URL_HOME)
+	onError(err)
+
+	dom := doc.Find("#Rightbar div.box").Last().Find("strong")
+	members, topics, comments := dom.Eq(0).Text(), dom.Eq(1).Text(), dom.Eq(2).Text()
+
+	str := doc.Find("#Bottom").Text()
+	removeSpace(&str)
+	reg := regexp.MustCompile(`(\d+)人在线最高记录(\d+).+VERSION:(.+?)·`)
+	res := reg.FindStringSubmatch(str)
+	online, onlineMax, version := res[1], res[2], res[3]
+
+	com = &Community{}
+	com.Members, _ = strconv.Atoi(members)
+	com.Topics, _ = strconv.Atoi(topics)
+	com.Comments, _ = strconv.Atoi(comments)
+	com.Online, _ = strconv.Atoi(online)
+	com.OnlineMax, _ = strconv.Atoi(onlineMax)
+	com.Version = version
 
 	return
 }
