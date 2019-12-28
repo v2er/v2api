@@ -12,6 +12,7 @@ import (
 
 const (
 	URL_HOME   = "https://www.v2ex.com"
+	URL_NODE   = URL_HOME + "/go/"
 	URL_RECENT = URL_HOME + "/recent"
 	URL_PLANES = URL_HOME + "/planes"
 	URL_MEMBER = URL_HOME + "/member/"
@@ -19,6 +20,8 @@ const (
 
 var (
 	ErrNotLogin = errors.New("Not login")
+
+	ErrNodeNotExist = errors.New("Node is not exist")
 )
 
 var DefaultClient *Client
@@ -36,6 +39,15 @@ type Topic struct {
 	NodeUrl     string
 	Publish     string
 	PublishTime time.Time
+}
+
+type List struct {
+	Topics  []*Topic
+	Total   int
+	Page    int
+	PageMax int
+	NodeBio string
+	NodeImg string
 }
 
 // Node 节点
@@ -97,9 +109,7 @@ func parseSelection(s *goquery.Selection) (*Topic, error) {
 	completeURL(&t.AuthorUrl)
 
 	t.Avatar, _ = s.Find(".avatar").Attr("src")
-	if len(t.Avatar) > 0 {
-		t.Avatar = "https:" + t.Avatar
-	}
+	completeURL(&t.Avatar)
 
 	votes := s.Find(".votes").Text()
 	removeSpace(&votes)

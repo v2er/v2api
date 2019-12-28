@@ -186,7 +186,93 @@ func (c *Client) Planes() (nodes []*Node, err error) {
 }
 
 // Recent 最近主题
-func (c *Client) Recent() {}
+func (c *Client) Recent(page int) (list *List, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = r.(error)
+		}
+	}()
+
+	if !c.HasLoggedIn() {
+		return nil, ErrNotLogin
+	}
+
+	url := URL_RECENT
+	if page > 0 {
+		url += "?p=" + strconv.Itoa(page)
+	}
+
+	doc, err := c.queryDocument(url)
+	onError(err)
+
+	topics := make([]*Topic, 0)
+	doc.Find(".cell.item").Each(func(i int, s *goquery.Selection) {
+		topic, err := parseSelection(s)
+		onError(err)
+		topics = append(topics, topic)
+	})
+
+	total := doc.Find("#Main .fade").Text()
+	total = regexp.MustCompile(`\d+`).FindString(total)
+
+	pageMax := doc.Find(".page_normal").Last().Text()
+	removeSpace(&pageMax)
+
+	list = &List{}
+	list.Topics = topics
+	list.Total, _ = strconv.Atoi(total)
+	list.Page = page
+	list.PageMax, _ = strconv.Atoi(pageMax)
+
+	return
+}
+
+// Node 节点主题
+func (c *Client) Node(node string, page int) (list *List, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = r.(error)
+		}
+	}()
+
+	if !c.HasLoggedIn() {
+		return nil, ErrNotLogin
+	}
+	if len(node) == 0 {
+		return nil, ErrNodeNotExist
+	}
+
+	url := URL_NODE + node
+	if page > 0 {
+		url += "?p=" + strconv.Itoa(page)
+	}
+
+	doc, err := c.queryDocument(url)
+	onError(err)
+
+	topics := make([]*Topic, 0)
+	doc.Find("#TopicsNode .cell").Each(func(i int, s *goquery.Selection) {
+		topic, err := parseSelection(s)
+		onError(err)
+		topics = append(topics, topic)
+	})
+
+	total := doc.Find(".fr.f12 strong").Text()
+
+	pageMax := doc.Find(".page_normal").Last().Text()
+	removeSpace(&pageMax)
+
+	list = &List{}
+	list.Topics = topics
+	list.Total, _ = strconv.Atoi(total)
+	list.Page = page
+	list.PageMax, _ = strconv.Atoi(pageMax)
+	list.NodeBio = doc.Find(".node_info span.f12").Text()
+	list.NodeImg, _ = doc.Find(".node_avatar img").Attr("src")
+	completeURL(&list.NodeImg)
+
+	return
+}
 
 func (c *Client) queryDocument(url string) (doc *goquery.Document, err error) {
 	req, err := http.NewRequest("GET", url, nil)
