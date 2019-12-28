@@ -2,6 +2,7 @@ package v2api
 
 import (
 	"errors"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -127,14 +128,21 @@ func parseSelection(s *goquery.Selection) (*Topic, error) {
 	removeSpace(&infoText)
 	infoSlice := strings.Split(infoText, "•")
 
-	if len(infoSlice) > 2 {
-		t.Publish = infoSlice[2]
-		t.PublishTime, _ = publishToTime(t.Publish)
+	replyPrefix := "最后回复来自"
+	replyIndex := 0
+	for i, v := range infoSlice {
+		if strings.HasPrefix(v, replyPrefix) {
+			replyIndex = i
+		}
 	}
 
-	if len(infoSlice) > 3 {
-		t.Reply = strings.TrimLeft(infoSlice[3], "最后回复来自")
+	if replyIndex > 0 {
+		t.Reply = strings.TrimLeft(infoSlice[replyIndex], replyPrefix)
+		t.Publish = infoSlice[replyIndex-1]
+	} else {
+		t.Publish = infoSlice[len(infoSlice)-1]
 	}
+	t.PublishTime, _ = publishToTime(t.Publish)
 
 	return t, nil
 }
@@ -159,9 +167,29 @@ func removeSpace(s *string) {
 	*s = v
 }
 
-// TODO:
 func publishToTime(publish string) (t time.Time, err error) {
-	return
+	if !strings.HasSuffix(publish, "前") {
+		return t, errors.New("Can't to parse time: " + publish)
+	}
+
+	getNum := func(s string) int {
+		res := regexp.MustCompile(s).FindStringSubmatch(publish)
+		if len(res) > 0 {
+			num, _ := strconv.Atoi(res[1])
+			return num
+		}
+		return 0
+	}
+
+	D := getNum(`(\d+)天`)
+	H := getNum(`(\d+)小时`)
+	M := getNum(`(\d+)分钟`)
+
+	dur := time.Duration(D)*time.Hour*24 +
+		time.Duration(H)*time.Hour +
+		time.Duration(M)*time.Minute
+
+	return time.Now().Add(-dur), nil
 }
 
 func onError(err error) {
