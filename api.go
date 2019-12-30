@@ -73,6 +73,19 @@ type Member struct {
 	Online   bool
 }
 
+// Profile 个人资料
+type Profile struct {
+	UserName      string
+	UserUrl       string
+	Avatar        string
+	FavNodes      int
+	FavTopics     int
+	Following     int
+	Notifications int
+
+	// TODO: balance
+}
+
 // Community 社区数据
 type Community struct {
 	// 首页右侧

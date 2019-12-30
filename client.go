@@ -26,6 +26,12 @@ func (c *Client) HasLoggedIn() bool {
 	return len(c.cookie) > 0
 }
 
+func (c *Client) mustLogin() {
+	if !c.HasLoggedIn() {
+		onError(ErrNotLogin)
+	}
+}
+
 // Latest 首页最新
 func (c *Client) Latest() (topics []*Topic, err error) {
 	defer func() {
@@ -109,6 +115,41 @@ func (c *Client) Member(name string) (mem *Member, err error) {
 	mem.JoinTime, _ = time.Parse("2006-01-0215:04:05+08:00", join)
 	mem.Rank, _ = strconv.Atoi(rank)
 	mem.Online = slt.Find(".online").Length() > 0
+
+	return
+}
+
+// Profile 个人资料
+func (c *Client) Profile() (pro *Profile, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = r.(error)
+		}
+	}()
+
+	c.mustLogin()
+
+	doc, err := c.queryDocument(URL_HOME)
+	onError(err)
+
+	slt := doc.Find("#Rightbar .box").Eq(0)
+
+	tmp := slt.Find("a .bigger")
+	favNodes, favTopics, following := tmp.Eq(0).Text(), tmp.Eq(0).Text(), tmp.Eq(0).Text()
+
+	notifications := slt.Find(".inner a.fade").Text()
+	notifications = strings.TrimRight(notifications, " 条未读提醒")
+
+	pro = &Profile{}
+	pro.UserName = slt.Find(".bigger a").Text()
+	pro.UserUrl = "/member/" + pro.UserName
+	completeURL(&pro.UserUrl)
+	pro.Avatar, _ = slt.Find("img.avatar").Attr("src")
+	completeURL(&pro.Avatar)
+	pro.FavNodes, _ = strconv.Atoi(favNodes)
+	pro.FavTopics, _ = strconv.Atoi(favTopics)
+	pro.Following, _ = strconv.Atoi(following)
+	pro.Notifications, _ = strconv.Atoi(notifications)
 
 	return
 }
