@@ -150,6 +150,7 @@ func (c *Client) Profile() (pro *Profile, err error) {
 	pro.FavTopics, _ = strconv.Atoi(favTopics)
 	pro.Following, _ = strconv.Atoi(following)
 	pro.Notifications, _ = strconv.Atoi(notifications)
+	pro.Balance, _ = parseBalance(slt.Find("a.balance_area"))
 
 	return
 }
@@ -181,6 +182,48 @@ func (c *Client) Community() (com *Community, err error) {
 	com.Online, _ = strconv.Atoi(online)
 	com.OnlineMax, _ = strconv.Atoi(onlineMax)
 	com.Version = version
+
+	return
+}
+
+// TopRich 财富排行
+func (c *Client) TopRich() ([]*Leaderboard, error) {
+	return c.getLeaderboardList(URL_HOME + "/top/rich")
+}
+
+// TopPlay 消费排行
+func (c *Client) TopPlay() ([]*Leaderboard, error) {
+	return c.getLeaderboardList(URL_HOME + "/top/player")
+}
+
+func (c *Client) getLeaderboardList(url string) (lbs []*Leaderboard, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = r.(error)
+		}
+	}()
+
+	doc, err := c.queryDocument(url)
+	onError(err)
+
+	lbs = make([]*Leaderboard, 0)
+
+	doc.Find("#Main .box .inner tr").Each(func(i int, s *goquery.Selection) {
+		if i%2 > 0 || i > 48 {
+			return
+		}
+
+		str := s.Find("h2").Text()
+		removeSpace(&str)
+		arr := strings.Split(str, ".")
+
+		lb := &Leaderboard{}
+		lb.Index, _ = strconv.Atoi(arr[0])
+		lb.UserName = arr[1]
+		lb.Balance, _ = parseBalance(s.Find(".balance_area"))
+
+		lbs = append(lbs, lb)
+	})
 
 	return
 }

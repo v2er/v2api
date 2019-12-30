@@ -82,8 +82,7 @@ type Profile struct {
 	FavTopics     int
 	Following     int
 	Notifications int
-
-	// TODO: balance
+	Balance       *Balance
 }
 
 // Community 社区数据
@@ -103,6 +102,17 @@ type Community struct {
 // 财富排行榜 https://www.v2ex.com/top/rich
 // 消费排行榜 https://www.v2ex.com/top/player
 type Leaderboard struct {
+	Index    int
+	UserName string
+	Balance  *Balance
+}
+
+// Balance
+type Balance struct {
+	Gold   int
+	Silver int
+	Bronze int
+	Money  float32
 }
 
 func init() {
@@ -203,6 +213,44 @@ func publishToTime(publish string) (t time.Time, err error) {
 		time.Duration(M)*time.Minute
 
 	return time.Now().Add(-dur), nil
+}
+
+func parseBalance(s *goquery.Selection) (*Balance, error) {
+	nums := regexp.MustCompile(`\d+`).FindAllString(s.Text(), -1)
+
+	imgs := s.Find("img")
+	if imgs.Length() == 0 {
+		// 兼容[消费排行]格式
+		money := s.Text()
+		removeSpace(&money)
+		if strings.HasPrefix(money, "$") {
+			money = strings.TrimLeft(money, "$")
+			value, _ := strconv.ParseFloat(money, 32)
+			return &Balance{Money: float32(value)}, nil
+		}
+	}
+	if imgs.Length() != len(nums) {
+		return nil, errors.New("Parse balance failed")
+	}
+
+	i := 0
+	b := &Balance{}
+
+	imgs.Each(func(_ int, img *goquery.Selection) {
+		src, _ := img.Attr("src")
+		num, _ := strconv.Atoi(nums[i])
+		i++
+		switch {
+		case strings.Contains(src, "gold"):
+			b.Gold = num
+		case strings.Contains(src, "silver"):
+			b.Silver = num
+		case strings.Contains(src, "bronze"):
+			b.Bronze = num
+		}
+	})
+
+	return b, nil
 }
 
 func onError(err error) {
