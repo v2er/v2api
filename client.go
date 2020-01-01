@@ -1,6 +1,7 @@
 package v2api
 
 import (
+	"fmt"
 	"net/http"
 	"regexp"
 	"strconv"
@@ -354,6 +355,50 @@ func (c *Client) Node(node string, page int) (list *List, err error) {
 	list.NodeBio = doc.Find(".node_info span.f12").Text()
 	list.NodeImg, _ = doc.Find(".node_avatar img").Attr("src")
 	completeURL(&list.NodeImg)
+
+	return
+}
+
+// Content
+// replyPage 回复列表页数 从1开始 为0则最新页
+func (c *Client) Content(id int64, replyPage int) (ctt *Content, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = r.(error)
+		}
+	}()
+
+	ctt = &Content{}
+
+	url := fmt.Sprintf("%s/t/%d", URL_HOME, id)
+	if replyPage > 0 {
+		url += "?p=" + strconv.Itoa(replyPage)
+	}
+
+	doc, err := c.queryDocument(url)
+	onError(err)
+
+	slt := doc.Find("#Main")
+
+	sltPage := slt.Find("a.page_current").Eq(0)
+	if sltPage.Length() == 0 {
+		ctt.ReplyPage = 1
+		ctt.ReplyPageMax = 1
+	} else {
+		ctt.ReplyPage = sltPage.Index() + 1
+		ctt.ReplyPageMax = sltPage.Parent().ChildrenFiltered("a").Length()
+	}
+
+	stats := slt.Find(".topic_stats").Text()
+	removeSpace(&stats)
+	ctt.Clicks, _ = regNum(`(\d+)次点击`, stats)
+	ctt.Thanks, _ = regNum(`(\d+)人感谢`, stats)
+	ctt.Favorites, _ = regNum(`(\d+)人收藏`, stats)
+
+	topic := &Topic{}
+	topic.Title = slt.Find(".header h1").Text()
+
+	ctt.Topic = topic
 
 	return
 }

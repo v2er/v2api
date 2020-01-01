@@ -115,6 +115,30 @@ type Balance struct {
 	Money  float32
 }
 
+// Content
+type Content struct {
+	Topic        *Topic
+	Body         string
+	Clicks       int
+	Favorites    int
+	Thanks       int
+	Replies      []*Reply
+	ReplyPage    int
+	ReplyPageMax int
+
+	// TODO: 附言
+}
+
+// Reply
+type Reply struct {
+	Author      string
+	AuthorUrl   string
+	Avatar      string
+	Number      int
+	Publish     string
+	PublishTime time.Time
+}
+
 func init() {
 	DefaultClient = &Client{}
 }
@@ -195,24 +219,23 @@ func publishToTime(publish string) (t time.Time, err error) {
 		return t, errors.New("Can't to parse time: " + publish)
 	}
 
-	getNum := func(s string) int {
-		res := regexp.MustCompile(s).FindStringSubmatch(publish)
-		if len(res) > 0 {
-			num, _ := strconv.Atoi(res[1])
-			return num
-		}
-		return 0
-	}
-
-	D := getNum(`(\d+)天`)
-	H := getNum(`(\d+)小时`)
-	M := getNum(`(\d+)分钟`)
+	D, _ := regNum(`(\d+)天`, publish)
+	H, _ := regNum(`(\d+)小时`, publish)
+	M, _ := regNum(`(\d+)分钟`, publish)
 
 	dur := time.Duration(D)*time.Hour*24 +
 		time.Duration(H)*time.Hour +
 		time.Duration(M)*time.Minute
 
 	return time.Now().Add(-dur), nil
+}
+
+func regNum(reg, str string) (int, error) {
+	res := regexp.MustCompile(reg).FindStringSubmatch(str)
+	if len(res) > 0 {
+		return strconv.Atoi(res[1])
+	}
+	return 0, nil
 }
 
 func parseBalance(s *goquery.Selection) (*Balance, error) {
