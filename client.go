@@ -400,6 +400,50 @@ func (c *Client) Content(id int64, replyPage int) (ctt *Content, err error) {
 
 	ctt.Topic = topic
 
+	noReply := slt.Find(".box.transparent").Length() > 0
+	if noReply {
+		return
+	}
+
+	box := slt.Find(".box").Eq(1)
+
+	str := box.Find(".cell .gray").First().Text()
+	removeSpace(&str)
+	reg := regexp.MustCompile(`(\d+)回复\|直到(.+)`)
+	res := reg.FindStringSubmatch(str)
+	if len(res) == 3 {
+		ctt.ReplyTotal, _ = strconv.Atoi(res[1])
+		ctt.ReplyTime, _ = parseTime(res[2])
+	}
+
+	// reply list
+	box.Find(".cell").Each(func(_ int, s *goquery.Selection) {
+		if id, _ := s.Attr("id"); !strings.HasPrefix(id, "r_") {
+			return
+		}
+
+		reply := &Reply{}
+
+		reply.Author = s.Find("a.dark").Text()
+		reply.AuthorUrl, _ = s.Find("a.dark").Attr("href")
+		completeURL(&reply.AuthorUrl)
+		reply.Avatar, _ = s.Find("img.avatar").Attr("src")
+		completeURL(&reply.Avatar)
+		reply.Number, _ = strconv.Atoi(s.Find(".no").Text())
+		reply.Content, _ = s.Find(".reply_content").Html()
+
+		ago := s.Find(".ago").Text()
+		removeSpace(&ago)
+		if si := strings.Index(ago, "via"); si > 0 {
+			reply.Publish = ago[:si]
+		} else {
+			reply.Publish = ago
+		}
+		reply.PublishTime, _ = publishToTime(reply.Publish)
+
+		ctt.Replies = append(ctt.Replies, reply)
+	})
+
 	return
 }
 

@@ -123,6 +123,8 @@ type Content struct {
 	Favorites    int
 	Thanks       int
 	Replies      []*Reply
+	ReplyTotal   int
+	ReplyTime    time.Time
 	ReplyPage    int
 	ReplyPageMax int
 
@@ -135,6 +137,7 @@ type Reply struct {
 	AuthorUrl   string
 	Avatar      string
 	Number      int
+	Content     string
 	Publish     string
 	PublishTime time.Time
 }
@@ -274,6 +277,10 @@ func parseBalance(s *goquery.Selection) (*Balance, error) {
 	})
 
 	return b, nil
+}
+
+func parseTime(s string) (time.Time, error) {
+	return time.ParseInLocation("2006-01-0215:04:05+08:00", s, time.Local)
 }
 
 func onError(err error) {
