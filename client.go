@@ -380,6 +380,8 @@ func (c *Client) Content(id int64, replyPage int) (ctt *Content, err error) {
 
 	slt := doc.Find("#Main")
 
+	ctt.Body, _ = slt.Find(".topic_content").Html()
+
 	sltPage := slt.Find("a.page_current").Eq(0)
 	if sltPage.Length() == 0 {
 		ctt.ReplyPage = 1
@@ -397,6 +399,31 @@ func (c *Client) Content(id int64, replyPage int) (ctt *Content, err error) {
 
 	topic := &Topic{}
 	topic.Title = slt.Find(".header h1").Text()
+	topic.Link = url
+	topic.Author = slt.Find(".header .gray a").Text()
+	topic.AuthorUrl, _ = slt.Find(".header .gray a").Attr("href")
+	completeURL(&topic.AuthorUrl)
+	topic.Avatar, _ = slt.Find("img.avatar").Attr("src")
+	completeURL(&topic.Avatar)
+
+	votes := slt.Find(".votes").Text()
+	removeSpace(&votes)
+	topic.Votes, _ = strconv.Atoi(votes)
+
+	a_ := slt.Find(".chevron").Next()
+	if a_.Is("a") {
+		topic.Node = a_.Text()
+		topic.NodeUrl, _ = a_.Attr("href")
+		completeURL(&topic.NodeUrl)
+	}
+
+	tmp := slt.Find(".header .gray").Text()
+	removeSpace(&tmp)
+	arr := strings.Split(tmp, "·")
+	if len(arr) > 1 {
+		topic.Publish = arr[1]
+		topic.PublishTime, _ = publishToTime(arr[1])
+	}
 
 	ctt.Topic = topic
 
