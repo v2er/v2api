@@ -6,7 +6,6 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/PuerkitoBio/goquery"
 )
@@ -46,7 +45,7 @@ func (c *Client) Latest() (topics []*Topic, err error) {
 
 	topics = make([]*Topic, 0)
 	doc.Find(".cell.item").Each(func(i int, s *goquery.Selection) {
-		topic, err := parseSelection(s)
+		topic, err := parseTopic(s)
 		onError(err)
 		topics = append(topics, topic)
 	})
@@ -113,7 +112,7 @@ func (c *Client) Member(name string) (mem *Member, err error) {
 	completeURL(&mem.Avatar)
 	mem.Number, _ = strconv.Atoi(number)
 	mem.Join = join
-	mem.JoinTime, _ = time.Parse("2006-01-0215:04:05+08:00", join)
+	mem.JoinTime, _ = parseTime(join)
 	mem.Rank, _ = strconv.Atoi(rank)
 	mem.Online = slt.Find(".online").Length() > 0
 
@@ -292,7 +291,7 @@ func (c *Client) Recent(page int) (list *List, err error) {
 
 	topics := make([]*Topic, 0)
 	doc.Find(".cell.item").Each(func(i int, s *goquery.Selection) {
-		topic, err := parseSelection(s)
+		topic, err := parseTopic(s)
 		onError(err)
 		topics = append(topics, topic)
 	})
@@ -337,7 +336,7 @@ func (c *Client) Node(node string, page int) (list *List, err error) {
 
 	topics := make([]*Topic, 0)
 	doc.Find("#TopicsNode .cell").Each(func(i int, s *goquery.Selection) {
-		topic, err := parseSelection(s)
+		topic, err := parseTopic(s)
 		onError(err)
 		topics = append(topics, topic)
 	})

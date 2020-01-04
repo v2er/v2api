@@ -22,11 +22,18 @@ const (
 var (
 	ErrNotLogin = errors.New("Not login")
 
-	ErrNodeNotExist = errors.New("Node is not exist")
+	ErrTopicNotExist = errors.New("Topic is not exist")
+	ErrNodeNotExist  = errors.New("Node is not exist")
+	ErrUserNotExist  = errors.New("User is not exist")
 )
 
 var DefaultClient *Client
 
+func init() {
+	DefaultClient = &Client{}
+}
+
+// Topic 主题
 type Topic struct {
 	Title       string
 	Link        string
@@ -42,6 +49,7 @@ type Topic struct {
 	PublishTime time.Time
 }
 
+// List 主题列表
 type List struct {
 	Topics  []*Topic
 	Total   int
@@ -115,7 +123,7 @@ type Balance struct {
 	Money  float32
 }
 
-// Content
+// Content 主题内容
 type Content struct {
 	Topic        *Topic
 	Body         string
@@ -131,7 +139,7 @@ type Content struct {
 	// TODO: 附言
 }
 
-// Reply
+// Reply 主题回复
 type Reply struct {
 	Author      string
 	AuthorUrl   string
@@ -142,11 +150,13 @@ type Reply struct {
 	PublishTime time.Time
 }
 
-func init() {
-	DefaultClient = &Client{}
+func onError(err error) {
+	if err != nil {
+		panic(err)
+	}
 }
 
-func parseSelection(s *goquery.Selection) (*Topic, error) {
+func parseTopic(s *goquery.Selection) (*Topic, error) {
 	t := &Topic{}
 
 	t.Title = s.Find(".topic-link").Text()
@@ -281,10 +291,4 @@ func parseBalance(s *goquery.Selection) (*Balance, error) {
 
 func parseTime(s string) (time.Time, error) {
 	return time.ParseInLocation("2006-01-0215:04:05+08:00", s, time.Local)
-}
-
-func onError(err error) {
-	if err != nil {
-		panic(err)
-	}
 }
