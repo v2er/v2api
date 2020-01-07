@@ -426,6 +426,18 @@ func (c *Client) Content(id int64, replyPage int) (ctt *Content, err error) {
 
 	ctt.Topic = topic
 
+	slt.Find(".subtle").Each(func(_ int, s *goquery.Selection) {
+		str := s.Find(".fade").Text()
+		removeSpace(&str)
+
+		ps := &Postscript{}
+		ps.Content, _ = s.Find(".topic_content").Html()
+		ps.Publish = strings.Split(str, "·")[1]
+		ps.PublishTime, _ = publishToTime(ps.Publish)
+
+		ctt.Postscripts = append(ctt.Postscripts, ps)
+	})
+
 	noReply := slt.Find(".box.transparent").Length() > 0
 	if noReply {
 		return

@@ -130,13 +130,19 @@ type Content struct {
 	Clicks       int
 	Favorites    int
 	Thanks       int
+	Postscripts  []*Postscript
 	Replies      []*Reply
 	ReplyTotal   int
 	ReplyTime    time.Time
 	ReplyPage    int
 	ReplyPageMax int
+}
 
-	// TODO: 附言
+// Postscript 主题附言
+type Postscript struct {
+	Content     string
+	Publish     string
+	PublishTime time.Time
 }
 
 // Reply 主题回复
